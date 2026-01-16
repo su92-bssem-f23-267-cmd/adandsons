@@ -1,11 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { LogIn, UserPlus, Home, Users, Info, Menu, X } from "lucide-react";
+import { LogIn, UserPlus, Home, Users, Info, Menu, X, LogOut, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
+    const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
+
+    useEffect(() => {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+            setUser(JSON.parse(userData));
+        }
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("user");
+        setUser(null);
+        router.push("/login");
+    };
 
     return (
         <nav className="w-full bg-gray-900/95 backdrop-blur-xl shadow-2xl fixed top-0 left-0 z-50 border-b border-gray-700">
@@ -50,14 +66,32 @@ export default function Navbar() {
                         </div>
 
                         <div className="flex gap-3">
-                            <Link href="/login" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 transition-all">
-                                <LogIn size={16} />
-                                Login
-                            </Link>
-                            <Link href="/signup" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-teal-500/40 hover:scale-105 transition-all">
-                                <UserPlus size={16} />
-                                Sign Up
-                            </Link>
+                            {user ? (
+                                <>
+                                    <Link href="/user-profile" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gray-800 text-gray-300 font-semibold border border-gray-700 hover:bg-gray-700 hover:text-white transition-all">
+                                        <User size={16} />
+                                        {user.name}
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 transition-all"
+                                    >
+                                        <LogOut size={16} />
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <Link href="/login" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 transition-all">
+                                        <LogIn size={16} />
+                                        Login
+                                    </Link>
+                                    <Link href="/signup" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-teal-500/40 hover:scale-105 transition-all">
+                                        <UserPlus size={16} />
+                                        Sign Up
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -102,22 +136,47 @@ export default function Navbar() {
                     </Link>
 
                     <div className="pt-4 flex flex-col gap-3">
-                        <Link
-                            href="/login"
-                            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            <LogIn size={18} />
-                            Login
-                        </Link>
-                        <Link
-                            href="/signup"
-                            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            <UserPlus size={18} />
-                            Sign Up
-                        </Link>
+                        {user ? (
+                            <>
+                                <Link
+                                    href="/user-profile"
+                                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gray-800 text-gray-300 font-semibold border border-gray-700"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <User size={18} />
+                                    {user.name}
+                                </Link>
+                                <button
+                                    onClick={() => {
+                                        handleLogout();
+                                        setIsOpen(false);
+                                    }}
+                                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-lg"
+                                >
+                                    <LogOut size={18} />
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/login"
+                                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <LogIn size={18} />
+                                    Login
+                                </Link>
+                                <Link
+                                    href="/signup"
+                                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <UserPlus size={18} />
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
