@@ -6,25 +6,38 @@ const globalForPrisma = global as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL;
+const getPrismaClient = () => {
+    const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-    throw new Error("DATABASE_URL check failed: Connection string is missing. Please ensure it is set in your environment variables (Vercel Settings > Environment Variables).");
-}
+    if (!connectionString) {
+        // We don't throw here to avoid crashing the build process
+        // But we will return a client that throws when used if we are at runtime
+        console.warn("DATABASE_URL is missing. Database operations will fail at runtime.");
 
-const pool = new Pool({
-    connectionString,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
-});
+        // Return a proxy that throws on any property access
+        return new Proxy({} as PrismaClient, {
+            get: (_, prop) => {
+                throw new Error(
+                    `DATABASE_URL is missing! Please set it in your environment variables (Vercel Settings > Environment Variables). Property accessed: ${String(prop)}`
+                );
+            }
+        });
+    }
 
-const adapter = new PrismaPg(pool);
+    const pool = new Pool({
+        connectionString,
+        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+    });
 
-export const prisma =
-    globalForPrisma.prisma ??
-    new PrismaClient({
+    const adapter = new PrismaPg(pool);
+
+    return new PrismaClient({
         adapter,
         log: ["error", "warn"],
     });
+};
+
+export const prisma = globalForPrisma.prisma ?? getPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = prisma;
