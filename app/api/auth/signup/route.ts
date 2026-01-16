@@ -38,10 +38,10 @@ export async function POST(request: Request) {
             { message: "Account created successfully!", user: { id: user.id, name: user.name, email: user.email } },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: any) {
         console.error("Signup error:", error);
         return NextResponse.json(
-            { error: "Something went wrong" },
+            { error: error.message || "Something went wrong" },
             { status: 500 }
         );
     }
