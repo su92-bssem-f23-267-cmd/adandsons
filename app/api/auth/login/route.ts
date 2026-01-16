@@ -37,10 +37,10 @@ export async function POST(request: Request) {
             { message: "Login successful!", user: { id: user.id, name: user.name, email: user.email } },
             { status: 200 }
         );
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login error:", error);
         return NextResponse.json(
-            { error: "Something went wrong" },
+            { error: error.message || "Something went wrong" },
             { status: 500 }
         );
     }
