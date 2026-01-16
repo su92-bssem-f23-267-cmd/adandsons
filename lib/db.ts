@@ -8,20 +8,34 @@ const globalForPrisma = global as unknown as {
 
 const getPrismaClient = () => {
     const connectionString = process.env.DATABASE_URL;
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME;
 
     if (!connectionString) {
-        // We don't throw here to avoid crashing the build process
-        // But we will return a client that throws when used if we are at runtime
-        console.warn("DATABASE_URL is missing. Database operations will fail at runtime.");
+        // Silent during build phase to avoid deployment crashes
+        if (typeof window === 'undefined') {
+            console.warn("DATABASE_URL is missing. Database operations will fail at runtime.");
+        }
 
-        // Return a proxy that throws on any property access
-        return new Proxy({} as PrismaClient, {
-            get: (_, prop) => {
-                throw new Error(
-                    `DATABASE_URL is missing! Please set it in your environment variables (Vercel Settings > Environment Variables). Property accessed: ${String(prop)}`
-                );
+        // Return a proxy that only throws when someone tries to actually use a method (like findUnique, create, etc.)
+        // but allows simple property access (like .user) during static analysis/build
+        return new Proxy({} as any, {
+            get: (target, prop) => {
+                if (prop === 'constructor' || prop === 'then' || typeof prop === 'symbol') return undefined;
+
+                // If they access a model (like .user, .product), return another proxy for that model
+                return new Proxy({}, {
+                    get: (_, method) => {
+                        return (...args: any[]) => {
+                            throw new Error(
+                                `CRITICAL: DATABASE_URL is missing in environment variables. \n` +
+                                `Action attempted: prisma.${String(prop)}.${String(method)} \n` +
+                                `Please add DATABASE_URL to your Vercel Project Settings > Environment Variables.`
+                            );
+                        };
+                    }
+                });
             }
-        });
+        }) as PrismaClient;
     }
 
     const pool = new Pool({
