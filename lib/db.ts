@@ -9,7 +9,7 @@ const globalForPrisma = global as unknown as {
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-    console.error("DATABASE_URL is not defined in environment variables");
+    throw new Error("DATABASE_URL check failed: Connection string is missing. Please ensure it is set in your environment variables (Vercel Settings > Environment Variables).");
 }
 
 const pool = new Pool({
